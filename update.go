@@ -3,6 +3,7 @@ package mgorepo
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -23,9 +24,18 @@ func (r Repository[M, D, SF, SORD, SO, UF]) Update(ctx context.Context, id strin
 
 	r.logDebugf(actionUpdate, "filters: %+v data: %+v", filters, data)
 
-	res, updateErr := r.Collection().UpdateOne(ctx, &filters, data)
+	updateCtx, seg := r.tracer.BeginSubSegment(ctx, fmt.Sprintf("MongoDB.Update.%s", r.collectionName))
+	defer func() {
+		seg.Close(nil)
+	}()
+
+	_ = seg.AddMetadata("filters", filters)
+
+	res, updateErr := r.Collection().UpdateOne(updateCtx, &filters, data)
 	if updateErr != nil {
 		r.logErrorf(updateErr, actionUpdate, "error updating %s document", r.collectionName)
+		_ = seg.AddError(updateErr)
+
 		return 0, updateErr
 	}
 

@@ -3,7 +3,7 @@ package mgorepo
 import (
 	"context"
 	"errors"
-
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -18,9 +18,16 @@ func (r Repository[M, D, SF, SORD, SO, UF]) Create(ctx context.Context, model M)
 
 	r.logDebugf(actionCreate, "data: %+v", data)
 
+	ctx, seg := r.tracer.BeginSubSegment(ctx, fmt.Sprintf("MongoDB.InsertOne.%s", r.collectionName))
+	defer func() {
+		seg.Close(nil)
+	}()
+
 	res, err := r.Collection().InsertOne(ctx, data)
 	if err != nil {
 		r.logErrorf(err, actionCreate, "error inserting %s DAO", r.collectionName)
+		seg.AddError(err)
+
 		return zeroM, err
 	}
 

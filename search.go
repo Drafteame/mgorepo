@@ -2,7 +2,7 @@ package mgorepo
 
 import (
 	"context"
-
+	"fmt"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -22,9 +22,18 @@ func (r Repository[M, D, SF, SORD, SO, UF]) searchExecute(ctx context.Context, f
 
 	r.printSearchDebug(filters, findOptions)
 
+	ctx, seg := r.tracer.BeginSubSegment(ctx, fmt.Sprintf("MongoDB.Find.%s", r.collectionName))
+	defer func() {
+		seg.Close(nil)
+	}()
+
+	_ = seg.AddMetadata("filters", filters)
+
 	cursor, errFind := r.Collection().Find(ctx, filters, findOptions)
 	if errFind != nil {
 		r.logErrorf(errFind, actionSearch, "error searching %s", r.collectionName)
+		_ = seg.AddError(errFind)
+
 		return nil, errFind
 	}
 

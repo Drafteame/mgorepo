@@ -2,6 +2,7 @@ package mgorepo
 
 import (
 	"context"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 )
@@ -27,11 +28,20 @@ func (r Repository[M, D, SF, SORD, SO, UF]) DeleteMany(ctx context.Context, filt
 		},
 	}
 
+	ctx, seg := r.tracer.BeginSubSegment(ctx, fmt.Sprintf("MongoDB.DeleteMany.%s", r.collectionName))
+	defer func() {
+		seg.Close(nil)
+	}()
+
+	_ = seg.AddMetadata("filters", filters)
+
 	r.logDebugf(actionDeleteMany, "filters: %+v data: %+v", bf, data)
 
 	res, err := r.Collection().UpdateMany(ctx, bf, data)
 	if err != nil {
 		r.logErrorf(err, actionDeleteMany, "error deleting %s documents", r.collectionName)
+		_ = seg.AddError(err)
+
 		return 0, err
 	}
 

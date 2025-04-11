@@ -1,8 +1,10 @@
 package mgorepo
 
 import (
+	"context"
 	"time"
 
+	"github.com/Drafteame/mgorepo/tracer"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -43,4 +45,8 @@ type SearchOptioner[SF SearchFilters, O SearchOrderer] interface {
 	Limit() int64
 	Skip() int64
 	Projection() map[string]int
+}
+
+type Tracer interface {
+	BeginSubSegment(ctx context.Context, name string) (context.Context, tracer.Segment)
 }
