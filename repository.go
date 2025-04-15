@@ -1,15 +1,15 @@
 package mgorepo
 
 import (
-	"strings"
-
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
-
 	"github.com/Drafteame/mgorepo/clock"
 	"github.com/Drafteame/mgorepo/driver"
 	"github.com/Drafteame/mgorepo/internal/env"
 	"github.com/Drafteame/mgorepo/logger"
+	"github.com/Drafteame/mgorepo/tracer"
+	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+
+	"strings"
 )
 
 type Repository[M Model, D Dao, SF SearchFilters, SORD SearchOrderer, SO SearchOptioner[SF, SORD], UF UpdateFields] struct {
@@ -24,6 +24,7 @@ type Repository[M Model, D Dao, SF SearchFilters, SORD SearchOrderer, SO SearchO
 	updatedAtField string
 	createdAtField string
 	deletedAtField string
+	tracer         Tracer
 	filterBuilders []func(SF) (*bson.E, error)
 	updateBuilders []func(UF) (*bson.E, error)
 }
@@ -53,6 +54,7 @@ func NewRepository[
 		updatedAtField: DefaultUpdatedAtField,
 		createdAtField: DefaultCreatedAtField,
 		deletedAtField: DefaultDeletedAtField,
+		tracer:         tracer.New(),
 		filterBuilders: filterBuilders,
 		updateBuilders: updateBuilders,
 	}
@@ -68,6 +70,10 @@ func (r Repository[M, D, SF, SORD, SO, UF]) Clock() Clock {
 
 func (r Repository[M, D, SF, SORD, SO, UF]) Logger() Logger {
 	return r.log
+}
+
+func (r Repository[M, D, SF, SORD, SO, UF]) Tracer() Tracer {
+	return r.tracer
 }
 
 func (r Repository[M, D, SF, SORD, SO, UF]) CollectionName() string {
@@ -133,6 +139,11 @@ func (r Repository[M, D, SF, SORD, SO, UF]) SetDefaultSearchLimit(searchLimit in
 
 func (r Repository[M, D, SF, SORD, SO, UF]) WithTimestamps(withTimestamps bool) Repository[M, D, SF, SORD, SO, UF] {
 	r.withTimestamps = withTimestamps
+	return r
+}
+
+func (r Repository[M, D, SF, SORD, SO, UF]) SetTracer(tr Tracer) Repository[M, D, SF, SORD, SO, UF] {
+	r.tracer = tr
 	return r
 }
 

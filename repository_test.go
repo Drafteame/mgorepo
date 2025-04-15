@@ -149,6 +149,19 @@ func TestRepository_Clock(t *testing.T) {
 	repo = repo.SetClock(nil)
 	assert.Nil(t, repo.clock, "clock should be nil")
 }
+func TestRepository_Tracer(t *testing.T) {
+	t.Parallel()
+
+	d := getTestDriver(t)
+
+	repo := newTestRepository(d)
+
+	assert.NotNil(t, repo.tracer, "tracer should not be nil")
+	assert.Equal(t, repo.tracer, repo.Tracer(), "tracer should be equal")
+
+	repo = repo.SetTracer(nil)
+	assert.Nil(t, repo.tracer, "tracer should be nil")
+}
 
 func TestRepository_CollectionName(t *testing.T) {
 	t.Parallel()

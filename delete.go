@@ -2,6 +2,7 @@ package mgorepo
 
 import (
 	"context"
+	"fmt"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -33,11 +34,20 @@ func (r Repository[M, D, SF, SORD, SO, UF]) Delete(ctx context.Context, id strin
 		},
 	}
 
+	ctx, seg := r.tracer.BeginSubSegment(ctx, fmt.Sprintf("MongoDB.Delete.%s", r.collectionName))
+	defer func() {
+		seg.Close(nil)
+	}()
+
+	_ = seg.AddMetadata("filters", filters)
+
 	r.logDebugf(actionDelete, "filters: %+v data: %+v", filters, data)
 
 	res, deleteErr := r.Collection().UpdateOne(ctx, &filters, data)
 	if deleteErr != nil {
 		r.logErrorf(deleteErr, actionDelete, "error deleting %s document", r.collectionName)
+		_ = seg.AddError(err)
+		
 		return 0, deleteErr
 	}
 
