@@ -1,3 +1,10 @@
+## v0.10.0 (2025-04-15)
+
+
+- Merge pull request #44 from Drafteame/feat/AH/add-xray-traces
+- feat: add xray traces (GAM-236)
+- feat: add xray traces
+
 ## v0.9.0 (2024-12-19)
 
 
